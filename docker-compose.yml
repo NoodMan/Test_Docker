@@ -1,0 +1,67 @@
+version: '3.9'
+
+services:
+    php:
+        build:
+            context: ./docker
+            dockerfile: php.Dockerfile
+        container_name: mon-php
+        depends_on:
+          - database
+        volumes:
+            - './api-doctor:/var/www/html:cached'
+
+    vuejs:
+        container_name: vuejsdoctor
+        build:
+            context: ./vue-doctor
+            dockerfile: Dockerfile
+        volumes:
+            - './vue-doctor:/app:cached'
+        ports:
+            - '82:8080'
+
+    nginx:
+        image: 'nginx:1.21.6'
+        container_name: mon-nginx
+        ports:
+            - '80:80'
+            - '443:443'
+        links:
+            - 'php'
+        volumes:
+            - './api-doctor:/var/www/html:cached'
+            - './config/nginx:/etc/nginx/conf.d:cached'
+
+    # adminer:
+    #     image: adminer
+    #     restart: always
+    #     ports:
+    #         - 8080:8080
+    #     links:
+    #       - "database"     
+
+    phpmyadmin:
+        image: phpmyadmin
+        restart: always
+        ports:
+            - 8091:80
+        links:
+            - "database"  
+        environment:
+            - PMA_ARBITRARY=1
+
+    database:
+        image: 'mariadb:10.7.3'
+        container_name: ma-database
+        restart: 'on-failure'
+        ports:
+            - "3306:3306"
+        environment:
+            MARIADB_ROOT_PASSWORD: root
+            MARIADB_DATABASE: API
+     
+
+networks: 
+  default:
+    name: alaji
